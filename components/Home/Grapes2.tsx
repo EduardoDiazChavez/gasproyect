@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import type { StorageManagerConfig, BlockManagerConfig, DeviceManagerConfig } from 'grapesjs';
+import { useEffect, useState } from "react";
+import type { Editor, StorageManagerConfig, BlockManagerConfig, DeviceManagerConfig } from 'grapesjs';
 import grapesjs from 'grapesjs'
 import * as algo from 'grapesjs-preset-webpage'
 import * as pincel from 'grapesjs-blocks-basic'
@@ -12,8 +12,9 @@ function WebBuilder() {
   const storageManager: StorageManagerConfig = {
     id: 'gjs-',
     type: 'local',
-    autosave: true,
+    autosave: false,
   }
+
 
   const deviceManager: DeviceManagerConfig = {
     devices:
@@ -80,24 +81,79 @@ function WebBuilder() {
     ],
 
   }
+  const [page, setPage] = useState({
+    html: undefined,
+    css: undefined,
+    js: undefined
+  })
 
   useEffect(() => {
-    grapesjs.init({
-      container: '#gjs',
-      height: '500px',
-      width: '80%',
-      plugins: [
-        algo.default,
-        pincel.default
-      ],
-      storageManager,
-      deviceManager,
-      blockManager,
+    console.log(page)
+  }, [page])
+
+
+  useEffect(() => {
+    const editor = grapesjs.init(
+      {
+        container: '#gjs',
+        height: '500px',
+        width: '80%',
+        plugins: [
+          algo.default,
+          pincel.default
+        ],
+        storageManager,
+        deviceManager,
+        blockManager,
+        pageManager: {
+          pages: [
+            {
+              id: 'page-id',
+              styles: `.my-class { color: red }`, // or a JSON of styles
+              component: '<div class="my-class">My element</div>', // or a JSON of components
+            }
+          ]
+        }
+      }
+    )
+    //console.log(editor.Parser)
+    // const resHtml = editor.Parser.parseHtml(`<table><div>Hi</div></table>`, {
+    //   htmlType: 'text/html', // default
+    // });
+    editor.on('load', () => {
+      console.log("LOAD")
+    })
+    editor.on('update', () => {
+      console.log("UPDATE")
+      const html = editor.getHtml()
+      const css = editor.getCss()
+      const js = editor.getJs()
+      setPage({ html, css, js })
+      console.log({ html, css, js })
+    })
+    editor.on('undo', () => {
+      console.log("UNDO")
+    })
+    editor.on('redo', () => {
+      console.log("REDO")
     })
   }, [])
 
   return (
-    <div id="gjs" ></div>
+    <>
+      <div id="gjs" ></div>
+      <div>
+        <h1>TITULO</h1>
+        <div className="w-[50%] h-[100px] border-2 overflow-auto">
+          {page.html}
+          {page.css}
+        </div>
+        <div dangerouslySetInnerHTML={{ __html: page.html }} />
+      </div>
+      <style>
+        {page.css}
+      </style>
+    </>
   );
 }
 export default WebBuilder;
